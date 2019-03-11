@@ -43,6 +43,40 @@ module.exports = class BaseModel {
     return item;
   }
 
+  getAllStudentsById(studentsId) {
+    const students = [];
+    for (let i = 0; i < studentsId.length; i += 1) {
+      students.push(this.getById(studentsId[i]));
+    }
+    return students;
+  }
+
+  getStudentsByName(stringToMatch) {
+    const matchedStudents = [];
+    stringToMatch = stringToMatch.toLowerCase();
+    for (let i = 0; i < this.items.length; i += 1) {
+      const lastName = this.items[i].lastName.toLowerCase();
+      const firstName = this.items[i].firstName.toLowerCase();
+      if (matchedStudents.length >= 5) {
+        break;
+      }
+      if (lastName.match(stringToMatch) || firstName.match(stringToMatch)) {
+        matchedStudents.push(this.items[i]);
+      }
+    }
+    return matchedStudents;
+  }
+
+  getTicketsByStudentId(id) {
+    const ticketsFound = [];
+    for (let i = 0; i < this.items.length; i += 1) {
+      if (this.items[i].studentId === id) {
+        ticketsFound.push(this.items[i]);
+      }
+    }
+    return ticketsFound;
+  }
+
   create(obj = {}) {
     const item = Object.assign({}, obj, { id: Date.now() });
     const { error } = Joi.validate(item, this.schema);

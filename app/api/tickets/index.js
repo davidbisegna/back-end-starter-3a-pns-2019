@@ -1,20 +1,50 @@
 const { Router } = require('express');
 const { Ticket, Student } = require('../../models');
 
-function attachStudent(ticket){
-  var student = Student.getById(ticket.studentId)
-  ticket.student = student
+function attachStudents(ticket) {
+  const newTicket = ticket;
+  const students = Student.getAllStudentsById(ticket.studentId);
+  const student = Student.getById(ticket.studentId[0]);
+  newTicket.students = students;
+  newTicket.student = student;
+  return newTicket;
 }
 
 const router = new Router();
 router.get('/', (req, res) => {
-  var tickets = Ticket.get();
-  for(let i=0; i<tickets.length; i++){
-    attachStudent(tickets[i])
+  const tickets = Ticket.get();
+  for (let i = 0; i < tickets.length; i += 1) {
+    tickets[i] = attachStudents(tickets[i]);
   }
-  res.status(200).json(tickets)
+  res.status(200).json(tickets);
 });
 
+router.get('/:ticketId', (req, res) => {
+  try {
+    let ticket = Ticket.getById(req.params.ticketId);
+    ticket = attachStudents(ticket);
+    res.status(200).json(ticket);
+  } catch (err) {
+    if (err.name === 'ValidationError') {
+      res.status(400).json(err.extra);
+    } else {
+      res.status(500).json(err);
+    }
+  }
+});
+
+router.get('/getStudentsTickets/:studentId', (req, res) => {
+  try {
+    const tickets = Ticket.getTicketsByStudentId(req.params.studentId);
+    res.status(200).json(tickets);
+  } catch (err) {
+    if (err.name === 'ValidationError') {
+      res.status(400).json(err.extra);
+    } else {
+      res.status(500).json(err);
+    }
+  }
+});
 
 router.post('/', (req, res) => {
   try {
@@ -29,26 +59,11 @@ router.post('/', (req, res) => {
   }
 });
 
-router.get('/:ticketId', (req, res) => {
-  try {
-    var ticket = Ticket.getById(req.params.ticketId)
-    attachStudent(ticket)
-    res.status(200).json(ticket)
-  } catch (err){
-    if (err.name === 'ValidationError') {
-      res.status(400).json(err.extra);
-    } else {
-      res.status(500).json(err);
-    }
-  }
-});
 
 router.delete('/:ticketId', (req, res) => {
   try {
-    var ticket = Ticket.getById(req.params.ticketId)
-    attachStudent(ticket)
-    res.status(200).json(Ticket.delete(req.params.ticketId))
-  } catch (err){
+    res.status(200).json(Ticket.delete(req.params.ticketId));
+  } catch (err) {
     if (err.name === 'ValidationError') {
       res.status(400).json(err.extra);
     } else {
@@ -59,11 +74,11 @@ router.delete('/:ticketId', (req, res) => {
 
 router.put('/:ticketId', (req, res) => {
   try {
-    Ticket.update(req.params.ticketId,req.body)
-    var ticket = Ticket.getById(req.params.ticketId)
-    attachStudent(ticket)
-    res.status(200).json()
-  } catch (err){
+    Ticket.update(req.params.ticketId, req.body);
+    let ticket = Ticket.getById(req.params.ticketId);
+    ticket = attachStudents(ticket);
+    res.status(200).json(ticket);
+  } catch (err) {
     if (err.name === 'ValidationError') {
       res.status(400).json(err.extra);
     } else {
